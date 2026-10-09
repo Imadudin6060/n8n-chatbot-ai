@@ -1,0 +1,332 @@
+{
+  "name": "tugas 2  implementasi",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Generate gambar Konten Otomatis",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "prompt"
+            },
+            {
+              "fieldLabel": "img_url"
+            },
+            {
+              "fieldLabel": "task_type"
+            },
+            {
+              "fieldLabel": "api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -1120,
+        96
+      ],
+      "id": "38efb165-f1f5-4e41-8f06-e9306f61def5",
+      "name": "Submit Text Prompt untuk Generate Gambar",
+      "webhookId": "aaa1fe7e-0aee-4672-9522-2482bfa582c2"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -672,
+        96
+      ],
+      "id": "5207adb1-e977-4826-9234-4c0a01b67d78",
+      "name": "Wait",
+      "webhookId": "379ec458-45a0-45fc-a567-041d552a30aa"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/jobs/recordInfo",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{$json.data.taskId}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$node[\"Submit Text Prompt untuk Generate Gambar\"].json[\"api_key\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -448,
+        96
+      ],
+      "id": "4ad4205c-3a66-437a-84f9-59f072f10de3",
+      "name": "Mendapatkan Status Generate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "746f7df1-bc7e-4088-b135-ae54b94b8d51",
+              "leftValue": "success",
+              "rightValue": "={{ $json.data.state }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        96
+      ],
+      "id": "6b1a5c2d-8b3e-4c14-88a4-060deaefa6d8",
+      "name": "Check Jika Generate Sudah Selesai"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resultJson = $json.data?.resultJson;\nif (!resultJson) {\n  throw new Error('KIE.ai mengembalikan status success tetapi resultJson kosong.');\n}\n\nconst result = typeof resultJson === 'string' ? JSON.parse(resultJson) : resultJson;\nconst urls = Array.isArray(result?.resultUrls) ? result.resultUrls : [];\n\nif (!urls.length) {\n  throw new Error('KIE.ai mengembalikan success tetapi tidak ada resultUrls.');\n}\n\nreturn [{\n  json: {\n    img1: urls[0] || null,\n    img2: urls[1] || null,\n    img3: urls[2] || null,\n    img4: urls[3] || null,\n    resultUrls: urls\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "2c2c18c0-a0c7-4ec3-ac1b-99dac8f8fb67",
+      "name": "Format Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const urls = $json.resultUrls || [\n  $json.img1,\n  $json.img2,\n  $json.img3,\n  $json.img4\n].filter(Boolean);\n\nreturn urls.map((url, index) => ({\n  json: {\n    url,\n    index: index + 1\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        128
+      ],
+      "id": "b814c01a-6dec-43c7-915f-647f1f39e752",
+      "name": "Loop Image"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.url}}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        272,
+        -48
+      ],
+      "id": "8f6a2654-7e8e-4a9c-bb9b-c6c734196243",
+      "name": "Download Gambar"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "8372013866",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        112
+      ],
+      "id": "a7bd0c45-70c6-47ae-b7bd-2f9f68945025",
+      "name": "Send a photo message",
+      "webhookId": "b769d039-251e-42ed-b4d4-5338d4a598c7",
+      "credentials": {
+        "telegramApi": {
+          "id": "1OuoECzItFk8btHj",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$node[\"Submit Text Prompt untuk Generate Gambar\"].json[\"api_key\"]}}"
+            },
+            {
+              "name": "Content-Type ",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"grok-imagine/text-to-image\",\n  \"input\": {\n    \"prompt\": \"{{$json.prompt.replace(/\"/g, \"\\\\\\\"\")}}\",\n    \"aspect_ratio\": \"3:2\"\n  }\n}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -896,
+        96
+      ],
+      "id": "bd5cada3-76f7-4ff9-a567-d1334dcaac91",
+      "name": "Mengirim Image Generation Request ke KIA.AI API"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Submit Text Prompt untuk Generate Gambar": {
+      "main": [
+        [
+          {
+            "node": "Mengirim Image Generation Request ke KIA.AI API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Mendapatkan Status Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mendapatkan Status Generate": {
+      "main": [
+        [
+          {
+            "node": "Check Jika Generate Sudah Selesai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Jika Generate Sudah Selesai": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Image": {
+      "main": [
+        [
+          {
+            "node": "Download Gambar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Gambar": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mengirim Image Generation Request ke KIA.AI API": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "60c4277d-2517-4db1-8075-2478eb4948e9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc96f10ae7dc95d3c138575ba243a0a167923dbcb524841d451aadf9135d5fb3"
+  },
+  "nodeGroups": [],
+  "id": "DRjEB5Xysycgea7U",
+  "tags": []
+}
