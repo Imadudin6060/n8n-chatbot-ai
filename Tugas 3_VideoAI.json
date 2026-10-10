@@ -1,0 +1,323 @@
+{
+  "name": "Tugas 3_VideoAI",
+  "nodes": [
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        192
+      ],
+      "id": "6fc1a4e0-6089-4cb3-8987-338cb0732800",
+      "name": "Wait",
+      "webhookId": "379ec458-45a0-45fc-a567-041d552a30aa"
+    },
+    {
+      "parameters": {
+        "url": "https://api.kie.ai/api/v1/jobs/recordInfo",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "taskId",
+              "value": "={{$json.data.taskId}}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$node[\"Submit Text Prompt untuk Generate Vidio\"].json[\"api_key\"]}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        336,
+        192
+      ],
+      "id": "9dfd8c27-2965-425c-bc76-3f768ab72c2b",
+      "name": "Mendapatkan Status Generate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "746f7df1-bc7e-4088-b135-ae54b94b8d51",
+              "leftValue": "success",
+              "rightValue": "={{ $json.data.state }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        192
+      ],
+      "id": "0b85593d-0aeb-4d55-9e15-d0d967f85f05",
+      "name": "Check Jika Generate Sudah Selesai"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.kie.ai/api/v1/jobs/createTask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Content-Type ",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"grok-imagine/image-to-video\",\n  \"input\": {\n    \"prompt\": \"{{$json.prompt}}\",\n    \"duration\": 6\n  }\n}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -112,
+        192
+      ],
+      "id": "f7930e97-2ba2-417d-b3e0-65a54f6e3b6e",
+      "name": "Mengirim Image Generation Request ke KIA.AI API"
+    },
+    {
+      "parameters": {
+        "formTitle": "Generate Video Konten Otomatis",
+        "formDescription": "Isi informasi di bawah ini untuk\nmemulai proses generate gambar",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "prompt"
+            },
+            {
+              "fieldLabel": "img_url"
+            },
+            {
+              "fieldLabel": "task_type"
+            },
+            {
+              "fieldLabel": "api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -336,
+        192
+      ],
+      "id": "f78b01b6-a189-4d4b-a83c-d0d09892b5a5",
+      "name": "Submit Text Prompt untuk Generate Vidio",
+      "webhookId": "db4b51e3-acfa-40b7-a9bb-c3782537f68a"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = JSON.parse($json.data.resultJson);\n\nreturn [{\n  videoUrl: result.resultUrls?.[0] || null\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        176
+      ],
+      "id": "e09d9189-0aeb-4942-b3bf-3fb00c2cf745",
+      "name": "Loop vidio"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        976,
+        176
+      ],
+      "id": "d8cf6d74-6e4d-4828-b6e4-44f4cdd338e3",
+      "name": "http reques"
+    },
+    {
+      "parameters": {
+        "name": "Vidio Topik 3",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1C9vC5qwCei_OWZ_GMnruh9P3erKmgTR0",
+          "mode": "list",
+          "cachedResultName": "Tugas 3_VideoAI",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1C9vC5qwCei_OWZ_GMnruh9P3erKmgTR0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1168,
+        176
+      ],
+      "id": "b6ffcce2-b176-4ad3-88a5-8d2cb18aa602",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "ZtQHeNBOTq8izcuM",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Mendapatkan Status Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mendapatkan Status Generate": {
+      "main": [
+        [
+          {
+            "node": "Check Jika Generate Sudah Selesai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Jika Generate Sudah Selesai": {
+      "main": [
+        [
+          {
+            "node": "Loop vidio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mengirim Image Generation Request ke KIA.AI API": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit Text Prompt untuk Generate Vidio": {
+      "main": [
+        [
+          {
+            "node": "Mengirim Image Generation Request ke KIA.AI API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop vidio": {
+      "main": [
+        [
+          {
+            "node": "http reques",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "http reques": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fbb6dba0-b3a8-42e3-a755-1f73af9c28ce",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc96f10ae7dc95d3c138575ba243a0a167923dbcb524841d451aadf9135d5fb3"
+  },
+  "nodeGroups": [],
+  "id": "gdEvH3AprzZYrPVJ",
+  "tags": []
+}
