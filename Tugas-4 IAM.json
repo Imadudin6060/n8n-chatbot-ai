@@ -1,0 +1,295 @@
+{
+  "name": "Tugas-4 IAM",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "90a6bd44-fe22-4bd5-90f9-0ed270463edb",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "8372013866",
+        "text": "={{ $json.Content }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        656,
+        -32
+      ],
+      "id": "681dafa6-5bda-4e41-9d4f-aedb7593508f",
+      "name": "Send a text message",
+      "webhookId": "f712c241-0fd5-432b-a3e7-cb610ff4cebd",
+      "credentials": {
+        "telegramApi": {
+          "id": "1OuoECzItFk8btHj",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d5b87fb-c844-41ed-ad95-1275f56cbe81",
+              "name": "id",
+              "value": "={{ $('Get row(s) in sheet').item.json.ID }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        880,
+        0
+      ],
+      "id": "ee244ec8-7c93-4a78-ab48-95e2f016bdb6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1hMHvfNHdFAgVfXol8Z4_aUOXBuSXdiVezJSG8onk84g",
+          "mode": "list",
+          "cachedResultName": " Auto Posting Scheduler.",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hMHvfNHdFAgVfXol8Z4_aUOXBuSXdiVezJSG8onk84g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hMHvfNHdFAgVfXol8Z4_aUOXBuSXdiVezJSG8onk84g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Published",
+            "ID": "={{ $('Filter Redy Posts').item.json.ID }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Content",
+              "displayName": "Content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Scheduled Date",
+              "displayName": "Scheduled Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Scheduled Time",
+              "displayName": "Scheduled Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1104,
+        -16
+      ],
+      "id": "c9d06d8d-e3f0-49b0-a8c1-e98eb32d0f9c",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "75bmrZehW74d0sSe",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst postsToSend = [];\n\nfor (const item of items) {\n  const row = item.json;\n  \n  // Ambil data dari kolom Google Sheet\n  const dateStr = row['Scheduled Date'];\n  const timeStr = row['Scheduled Time'];\n  const status = row['Status'];\n\n  // Kita longgarkan syaratnya: \n  // Asalkan tanggal dan waktu ada, langsung kita proses (tanpa cek Status dan tanpa cek waktu sekarang)\n  if (dateStr && timeStr) {\n    \n    // PERBAIKAN FORMAT TANGGAL:\n    // Google Sheet menggunakan format DD/MM/YYYY (contoh: 11/02/2026)\n    // Kita ubah menjadi YYYY-MM-DD agar bisa dibaca JavaScript\n    const dateParts = dateStr.split('/');\n    const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;\n    \n    // Gabungkan Tanggal dan Waktu\n    const dateTimeString = `${formattedDate}T${timeStr}`;\n    \n    // Parse waktu ke format DateTime n8n (hanya untuk validasi format, bukan untuk filter)\n    const scheduledTime = DateTime.fromISO(dateTimeString, { zone: 'Asia/Jakarta' });\n\n    // Masukkan ke output jika format tanggalnya valid\n    if (scheduledTime.isValid) {\n      postsToSend.push(item);\n    }\n  }\n}\n\nreturn postsToSend;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "26cdbf0f-4b79-4655-b9d0-2563a87c8e65",
+      "name": "Filter Redy Posts"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1hMHvfNHdFAgVfXol8Z4_aUOXBuSXdiVezJSG8onk84g",
+          "mode": "list",
+          "cachedResultName": " Auto Posting Scheduler.",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hMHvfNHdFAgVfXol8Z4_aUOXBuSXdiVezJSG8onk84g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1hMHvfNHdFAgVfXol8Z4_aUOXBuSXdiVezJSG8onk84g/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -48
+      ],
+      "id": "0468bb84-d4d4-42a3-8036-4b820dfcde1a",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "75bmrZehW74d0sSe",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Redy Posts": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Redy Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "abfdacb7-b911-4408-885e-861b64d78c4e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc96f10ae7dc95d3c138575ba243a0a167923dbcb524841d451aadf9135d5fb3"
+  },
+  "nodeGroups": [],
+  "id": "ENQWvgEw19fUOC2D",
+  "tags": []
+}
