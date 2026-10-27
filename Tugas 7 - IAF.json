@@ -1,0 +1,275 @@
+{
+  "name": "Tugas 7 - IAF",
+  "nodes": [
+    {
+      "parameters": {
+        "chatId": "8372013866",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        160
+      ],
+      "id": "548e8780-9d79-45ce-9799-74a5c00fbddb",
+      "name": "Pesan True",
+      "webhookId": "026d506d-607c-4395-af7f-f95a74f5918b",
+      "credentials": {
+        "telegramApi": {
+          "id": "0H88PEJH99k0vtuQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        192
+      ],
+      "id": "dee6de62-6ae9-478a-bb5b-d5ce63d2dc3f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JuINPJ64RHqvxdDj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $node[\"Filter 7 Hari & Format Teks\"].json.promptData }} (Notes: sesuaikan dengan nama nodes kalian).\n---\nInstruksi: \"Tulis ringkasan kebiasaan belanja saya minggu ini dan beri 1 saran penghematan. Gunakan teks biasa tanpa simbol Markdown (#, *, ---), pakai emoji sebagai judul, dan beri baris kosong antar bagian.\"",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        720,
+        32
+      ],
+      "id": "35ce7b76-d96f-452e-a08d-b2587b23b852",
+      "name": "Analisis"
+    },
+    {
+      "parameters": {
+        "chatId": "8372013866",
+        "text": "=Tidak ditemukan log pengeluaran untuk 7 hari terakhir. Tidak ada analisis AI yang dibuat.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        352
+      ],
+      "id": "a1201cd4-3dfd-4cfc-97f4-18e9b23f5bd7",
+      "name": "Pesan False",
+      "webhookId": "260b1a22-a9ec-4fa3-8d03-5aa5885eb11f",
+      "credentials": {
+        "telegramApi": {
+          "id": "0H88PEJH99k0vtuQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c060f6c3-5277-4da6-b8b3-72882cee3bb6",
+              "leftValue": "={{ $json.hasExpenses }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        208
+      ],
+      "id": "66e36e0a-243d-4312-8bd2-464008c3fa8e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst today = new Date();\ntoday.setHours(23, 59, 59, 999); // inklusif hari ini sampai akhir hari\n\nconst sevenDaysAgo = new Date();\nsevenDaysAgo.setDate(today.getDate() - 7);\nsevenDaysAgo.setHours(0, 0, 0, 0);\n\nlet weeklyExpenses = [];\nlet formattedString = \"Data pengeluaran saya minggu ini:\\n\";\nlet hasExpenses = false;\n\nfor (const item of items) {\n  const rawTanggal = item.json.Tanggal; // format: \"13/04/2026\"\n  \n  // Parse manual DD/MM/YYYY → YYYY-MM-DD agar valid di semua engine\n  const [day, month, year] = rawTanggal.split(\"/\");\n  const expenseDate = new Date(`${year}-${month}-${day}`);\n\n  if (expenseDate >= sevenDaysAgo && expenseDate <= today) {\n    weeklyExpenses.push(item.json);\n    formattedString += `- ${item.json.Deskripsi}: Rp${item.json[\"Jumlah (IDR)\"]}\\n`;\n    hasExpenses = true;\n  }\n}\n\nreturn [{\n  json: {\n    promptData: formattedString,\n    hasExpenses: hasExpenses\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        208
+      ],
+      "id": "3e87b44f-3b3d-4a9c-ad42-0d861c0436e8",
+      "name": "Filter 7 Hari & Format Teks"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1zAHuasxFy0w4hkJ0uB_9ditKLu8j1FOytqIUChGWwRk",
+          "mode": "list",
+          "cachedResultName": "Data Dummy Catatan Keuangan.",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zAHuasxFy0w4hkJ0uB_9ditKLu8j1FOytqIUChGWwRk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1zAHuasxFy0w4hkJ0uB_9ditKLu8j1FOytqIUChGWwRk/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        128,
+        208
+      ],
+      "id": "61f0d891-856c-4abe-95d9-fb2b75679271",
+      "name": "Ambil Log Pengeluaran",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "75bmrZehW74d0sSe",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -96,
+        208
+      ],
+      "id": "4e8b81c8-baf2-42fd-8655-218317fb1980",
+      "name": "Setiap Hari minggu"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Analisis": {
+      "main": [
+        [
+          {
+            "node": "Pesan True",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analisis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Analisis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pesan False",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter 7 Hari & Format Teks": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ambil Log Pengeluaran": {
+      "main": [
+        [
+          {
+            "node": "Filter 7 Hari & Format Teks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Setiap Hari minggu": {
+      "main": [
+        [
+          {
+            "node": "Ambil Log Pengeluaran",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "93f1cf2d-2345-4617-8fe1-a31a8261627f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc96f10ae7dc95d3c138575ba243a0a167923dbcb524841d451aadf9135d5fb3"
+  },
+  "nodeGroups": [],
+  "id": "JmM4FYojjI97CIHQ",
+  "tags": []
+}
