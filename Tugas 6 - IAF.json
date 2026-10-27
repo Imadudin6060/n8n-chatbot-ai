@@ -1,0 +1,363 @@
+{
+  "name": "Tugas 6 - IAF",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analisis teks email ini untuk mendeteksi tanda-tanda phishing keuangan. Fokus pada urgensi palsu, tautan mencurigakan, permintaan informasi pribadi, dan peniruan identitas bank.\n\nBeri skor bahaya dari 1 sampai 10, dengan 1 berarti sangat aman dan 10 berarti sangat berbahaya.\n\nJawab HANYA dengan format: Skor: [angka]\n\nEmail: {{ $json.snippet || $json.textPlain || $json.text || '(isi email tidak tersedia)' }}\n\nSubject: {{ $json.subject || $json.Subject || '(tanpa subjek)' }}\n\nPengirim: {{ $json.from?.value?.[0]?.address || $json.from || $json.From || 'Tidak diketahui' }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Anda adalah analis keamanan email. Nilai indikasi phishing berdasarkan urgensi palsu, tautan mencurigakan, permintaan informasi pribadi, dan peniruan identitas bank. Skor 1 berarti risiko rendah dan 10 berarti risiko sangat tinggi. Ikuti format output yang diminta."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "5930a623-ab43-4893-b46c-e9baa0a50815",
+      "name": "Analisa Phishing",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        3168,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\n/**\n * Tugas 6 - Sistem Triase Phishing AI\n * Ekstrak skor dan pertahankan ID email dari input.\n */\n\n// 1. Ambil respons AI\nconst llmOutput = String(\n  $json.text ??\n  $json.response ??\n  $json.output ??\n  $json.aiResponse ??\n  ''\n);\n\n// 2. Ekstrak skor 1-10\nconst match = llmOutput.match(/Skor\\s*:\\s*(10|[1-9])\\b/i);\nconst score = match ? Number(match[1]) : null;\n\nconst validScore =\n  Number.isInteger(score) &&\n  score >= 1 &&\n  score <= 10;\n\n// 3. Ambil ID email dari input\nconst emailMessageId =\n  $json.emailMessageId ??\n  $json.id ??\n  null;\n\n// 4. Siapkan output\nreturn {\n  json: {\n    ...$json,\n    aiResponse: llmOutput,\n    emailMessageId,\n    riskScore: validScore ? score : null,\n    scoreFound: validScore\n  }\n};\n"
+      },
+      "id": "cf5f8063-a130-4240-a514-1160c29b9c28",
+      "name": "Ekstrak Skor dari Teks AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3536,
+        1072
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger1').first().json.id }}",
+        "labelIds": [
+          "Label_4655486490568618694"
+        ]
+      },
+      "id": "a0343e6b-3b41-42a6-8329-9a054a65d8c8",
+      "name": "Memberikan Label Otomatis",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4000,
+        976
+      ],
+      "webhookId": "d402c227-babb-4c78-9475-d5c89ab5d5ac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "48C8f7qBRRkTx5rn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "8372013866",
+        "text": "=⚠️ *Tinjauan Email*\\nSkor risiko phishing: {{ $json.riskScore ?? 'Tidak terbaca' }}/10\\nPengirim: {{ $json.from.value?.[0]?.address || $json.from || 'Tidak diketahui' }}\\nSubjek: {{ $json.subject || '(tanpa subjek)' }}\\n\\nHasil AI:\\n{{ $json.aiResponse }}\\n\\nMohon periksa email secara manual. Email tidak dihapus otomatis.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "e3268917-5ef4-4b1a-b998-c2d34fb8b7ba",
+      "name": "Notif untuk Skor Rendah",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4000,
+        1216
+      ],
+      "webhookId": "42898916-1e65-43b3-8857-6a57a3954855",
+      "credentials": {
+        "telegramApi": {
+          "id": "0H88PEJH99k0vtuQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "8372013866",
+        "text": "=📩 Ada email baru!\n\n👤 Pengirim: {{ $json.From }}\n📌 Subject: {{ $json.Subject }}",
+        "additionalFields": {}
+      },
+      "id": "a09c52b9-c803-4a99-ad19-dce8aca7bd9c",
+      "name": "Reminder Email dari Allowlist",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3168,
+        832
+      ],
+      "webhookId": "9372576e-0039-400c-8d58-f61484e4cbf0",
+      "credentials": {
+        "telegramApi": {
+          "id": "0H88PEJH99k0vtuQ",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.From }}",
+                    "rightValue": "pdrima780@gmail.com",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "a83d910f-c772-4513-8319-202171326d7d"
+                  },
+                  {
+                    "leftValue": "={{ $json.From }}",
+                    "rightValue": "pdrima780@gmail.com",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "22875d6e-5a3d-42f8-8d73-911530a27a68"
+                  },
+                  {
+                    "leftValue": "={{ $json.From }}",
+                    "rightValue": "pdrima780@gmail.com",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "3ebe435c-5921-4a34-bf3b-b853b5b2c057"
+                  },
+                  {
+                    "leftValue": "={{ $json.From }}",
+                    "rightValue": "pdrima780@gmail.com",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c29518ed-225c-43c2-b348-c03811ff3d43"
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Trusted / Allowlist"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "cd1f6dbc-f046-49c6-b9a8-dd808cb05548",
+      "name": "Cek Allowlist",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2896,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        3104,
+        1264
+      ],
+      "id": "fa4ed506-fa95-480c-a4c1-da6283cfa957",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "JuINPJ64RHqvxdDj",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "329d34f1-282a-4112-91be-025affeda285",
+              "leftValue": "={{ $json.riskScore ?? 0 }}",
+              "rightValue": 6,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "42a8af89-a93b-4ce1-84f6-2b99aabc0bfe",
+              "leftValue": "={{ $json.riskScore ?? 0 }}",
+              "rightValue": 6,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3760,
+        1072
+      ],
+      "id": "80bae786-5e58-4d94-b8ae-05d37fedcc7c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        2672,
+        1024
+      ],
+      "id": "1af3b0fd-7962-4686-90f4-b69d988cadbd",
+      "name": "Gmail Trigger1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "48C8f7qBRRkTx5rn",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Analisa Phishing": {
+      "main": [
+        [
+          {
+            "node": "Ekstrak Skor dari Teks AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ekstrak Skor dari Teks AI": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cek Allowlist": {
+      "main": [
+        [
+          {
+            "node": "Reminder Email dari Allowlist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analisa Phishing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analisa Phishing",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Memberikan Label Otomatis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notif untuk Skor Rendah",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Cek Allowlist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d7adc410-fb58-4c74-8edf-a897757669f5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dc96f10ae7dc95d3c138575ba243a0a167923dbcb524841d451aadf9135d5fb3"
+  },
+  "nodeGroups": [],
+  "id": "O2NufXXgfwl0ngKG",
+  "tags": []
+}
