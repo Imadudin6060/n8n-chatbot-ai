@@ -27,7 +27,7 @@
           "__rl": true,
           "value": "1q41F6sJ6xnQHXeqXA3dK97X7Jfzpjk2e_V2gEPFFSDA",
           "mode": "list",
-          "cachedResultName": "Data Bitcoin",
+          "cachedResultName": "Analisis Sentimen BTC ETC",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1q41F6sJ6xnQHXeqXA3dK97X7Jfzpjk2e_V2gEPFFSDA/edit?usp=drivesdk"
         },
         "sheetName": {
@@ -40,38 +40,52 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "timestamp": "={{ JSON.parse($('Analisis Sentimen').item.json.text).timestamp }}",
-            "text": "={{ JSON.parse($('Analisis Sentimen').item.json.text).text }}",
-            "status": "={{ JSON.parse($('Analisis Sentimen').item.json.text).status }}"
+            "waktu": "={{ $('Tiap 15 menit').item.json.timestamp }}",
+            "Text": "={{ $('Analisis Sentimen').item.json.text ? JSON.parse($('Analisis Sentimen').item.json.text).Text : $('Analisis Sentimen').item.json.Text }}",
+            "Sentimen": "={{ $('Analisis Sentimen').item.json.text ? JSON.parse($('Analisis Sentimen').item.json.text).Sentimen : '' }}",
+            "ID Tween": "https://cointelegraph.com"
           },
           "matchingColumns": [],
           "schema": [
             {
-              "id": "timestamp",
-              "displayName": "timestamp",
+              "id": "waktu",
+              "displayName": "waktu",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true
+              "canBeUsedToMatch": true,
+              "removed": false
             },
             {
-              "id": "text",
-              "displayName": "text",
+              "id": "ID Tween",
+              "displayName": "ID Tween",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true
+              "canBeUsedToMatch": true,
+              "removed": false
             },
             {
-              "id": "status",
-              "displayName": "status",
+              "id": "Text",
+              "displayName": "Text",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentimen",
+              "displayName": "Sentimen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
             }
           ],
           "attemptToConvertTypes": false,
@@ -100,7 +114,7 @@
           "__rl": true,
           "value": "1q41F6sJ6xnQHXeqXA3dK97X7Jfzpjk2e_V2gEPFFSDA",
           "mode": "list",
-          "cachedResultName": "Data Bitcoin",
+          "cachedResultName": "Analisis Sentimen BTC ETC",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1q41F6sJ6xnQHXeqXA3dK97X7Jfzpjk2e_V2gEPFFSDA/edit?usp=drivesdk"
         },
         "sheetName": {
@@ -162,7 +176,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Waktu Eksekusi: {{ $('Tiap 15 menit').item.json.timestamp }}\n\nData Terkini dari API:\n- Bitcoin: USD ${{ $('$BTC & $ETH').item.json.bitcoin.usd }} (24h Change: {{ $('$BTC & $ETH').item.json.bitcoin.usd_24h_change }}%)\n- Ethereum: USD ${{ $('$BTC & $ETH').item.json.ethereum.usd }} (24h Change: {{ $('$BTC & $ETH').item.json.ethereum.usd_24h_change }}%)\n\nTugas:\nAnalisis data crypto di atas dan berikan respons HANYA dalam format JSON valid tanpa teks/markdown tambahan di luar objek JSON.\n\nFormat JSON yang wajib diikuti:\n{\n  \"timestamp\": \"{{ $('Tiap 15 menit').item.json.timestamp }}\",\n  \"status\": \"Positif\" | \"Negatif\" | \"Neutral\",\n  \"text\": \"Tuliskan analisis ringkas pergerakan harga Bitcoin dan Ethereum dalam 2-3 kalimat di sini.\"\n}",
+        "text": "=Waktu Eksekusi: {{ $('Tiap 15 menit').item.json.timestamp }}\n\nData Terkini dari API:\n- Bitcoin: USD ${{ $('$BTC & $ETH').item.json.bitcoin.usd }} (24h Change: {{ $('$BTC & $ETH').item.json.bitcoin.usd_24h_change }}%)\n- Ethereum: USD ${{ $('$BTC & $ETH').item.json.ethereum.usd }} (24h Change: {{ $('$BTC & $ETH').item.json.ethereum.usd_24h_change }}%)\n\nTugas:\nAnalisis data crypto di atas dan berikan respons HANYA dalam format JSON valid tanpa teks/markdown tambahan di luar objek JSON.\n\nFormat JSON yang wajib diikuti:\n{\n  \"waktu\": \"{{ $('Tiap 15 menit').item.json.timestamp }}\",\n  \"ID Tween\": \"N/A\",\n  \"Text\": \"Tuliskan analisis ringkas pergerakan harga Bitcoin dan Ethereum dalam 2-3 kalimat di sini.\",\n  \"Sentimen\": \"Positif\" | \"Negatif\" | \"Neutral\"\n}",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -372,7 +386,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "f99bcba7-d83b-45d3-8d81-5202fb77293d",
+  "versionId": "db1dfea9-b3ff-4d7d-834a-ad820dfb5672",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "dc96f10ae7dc95d3c138575ba243a0a167923dbcb524841d451aadf9135d5fb3"
